@@ -4,74 +4,6 @@ import time
 import os
 import random
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-
-from scipy.ndimage import convolve
-
-
-def binary_thresholding(img, threshold,inv = False):
-    if inv:
-        ret, img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY_INV)
-    else:
-        ret, img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
-        
-    return img
-
-
-
-
-
-def resize_image(img, scale_percent):
-    
-    width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
-
-    dim = (width, height)
-    
-    resized = cv2.resize(img, dim)
-    return resized
-
-
-def load_file(inv = False,re_size = 50):
-    """
-    Asks the user for integer input and between given bounds low and high.
-
-    :param prompt: String - The string to prompt the user for input with
-    :param low: Int - The low bound that the user must stay within
-    :param high: Int - The high bound that the user must stay within
-    :return: The valid input value that the user entered
-
-    """
-
-
-
-    try:
-        
-        file = input("Ingrese la ruta de la imagen: ")
-
-        path = os.path.dirname(os.path.abspath(__file__))
-        img_path = os.path.join(path, file)
-
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        
-        if img is None:
-            raise FileNotFoundError("No se pudo cargar la imagen.")
-    except Exception as e:
-        print(f"Error al cargar la imagen: {e}")
-        return None
-    
-    img_thresh = binary_thresholding(img, 127, inv=inv)
-    result = resize_image(img_thresh, re_size)
-    binary_res = result/255
-    #print(binary_res)
-    
-
-
-    return result,binary_res
-
-
 
 
 def clear_console():
@@ -114,7 +46,7 @@ def resize_console(rows, cols):
         print("Unable to resize terminal. Your operating system is not supported.\n\r")
 
 
-def create_initial_grid(rows, cols,matrix = None,image = False):
+def create_initial_grid(rows, cols):
     """
     Creates a random list of lists that contains 1s and 0s to represent the cells in Conway's Game of Life.
 
@@ -123,22 +55,16 @@ def create_initial_grid(rows, cols,matrix = None,image = False):
     :return: Int[][] - A list of lists containing 1s for live cells and 0s for dead cells
     """
 
-    if image:
-
-        grid = matrix
-
-    else:
-    
-        grid = []
-        for row in range(rows):
-            grid_rows = []
-            for col in range(cols):
-                # Generate a random number and based on that decide whether to add a live or dead cell to the grid
-                if random.randint(0, 7) == 0:
-                    grid_rows += [1]
-                else:
-                    grid_rows += [0]
-            grid += [grid_rows]
+    grid = []
+    for row in range(rows):
+        grid_rows = []
+        for col in range(cols):
+            # Generate a random number and based on that decide whether to add a live or dead cell to the grid
+            if random.randint(0, 7) == 0:
+                grid_rows += [1]
+            else:
+                grid_rows += [0]
+        grid += [grid_rows]
     return grid
 
 
@@ -168,9 +94,6 @@ def print_grid(rows, cols, grid, generation):
         output_str += "\n\r"
     print(output_str, end=" ")
 
-    
-
-
 
 def create_next_grid(rows, cols, grid, next_grid):
     """
@@ -183,10 +106,7 @@ def create_next_grid(rows, cols, grid, next_grid):
     :param next_grid: Int[][] - The list of lists that will be used to represent the next generation of the Game of Life
     grid
     """
-    grid = np.array(grid)
-    live_neighbors = get_live_neighbors(rows, cols, rows, cols, grid)
-    next_grid = grid * ((live_neighbors<2)|(live_neighbors>3)*1) + (-grid+1) * (live_neighbors==3) * 1
-"""""
+
     for row in range(rows):
         for col in range(cols):
             # Get the number of live cells adjacent to the cell at grid[row][col]
@@ -202,12 +122,6 @@ def create_next_grid(rows, cols, grid, next_grid):
             # If the number of surrounding live cells is 3 and the cell at grid[row][col] is alive keep it alive
             else:
                 next_grid[row][col] = grid[row][col]
-"""""
-
-
-
-
-
 
 
 def get_live_neighbors(row, col, rows, cols, grid):
@@ -222,18 +136,14 @@ def get_live_neighbors(row, col, rows, cols, grid):
     :return: Int - The number of live cells surrounding the cell at grid[row][cell]
     """
 
-    # life_sum = 0
-    # for i in range(-1, 2):
-    #     for j in range(-1, 2):
-    #         # Make sure to count the center cell located at grid[row][col]
-    #         if not (i == 0 and j == 0):
-    #             # Using the modulo operator (%) the grid wraps around
-    #             life_sum += grid[((row + i) % rows)][((col + j) % cols)]
-    
-    life_sum = convolve(grid, weights =np.array([[1, 1, 1],[1, 0, 1],[1, 1, 1]]), mode='constant')
-    
+    life_sum = 0
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            # Make sure to count the center cell located at grid[row][col]
+            if not (i == 0 and j == 0):
+                # Using the modulo operator (%) the grid wraps around
+                life_sum += grid[((row + i) % rows)][((col + j) % cols)]
     return life_sum
-
 
 
 def grid_changing(rows, cols, grid, next_grid):
@@ -287,18 +197,6 @@ def run_game():
 
     clear_console()
 
-
-    file,matrix = load_file(inv=True,re_size=5)
-    print(matrix)
-    print("Tamaño de la imagen: ", matrix.shape)
-    cv2.imshow('Imagen', file)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-    
-    # clear_console()
-
     # Get the number of rows and columns for the Game of Life grid
     rows = get_integer_value("Enter the number of rows (10-60): ", 10, 60)
     clear_console()
@@ -309,8 +207,8 @@ def run_game():
     resize_console(rows, cols)
 
     # Create the initial random Game of Life grids
-    current_generation = create_initial_grid(rows, cols, matrix = matrix, image = 0)
-    next_generation = create_initial_grid(rows, cols,matrix = matrix, image = 0)
+    current_generation = create_initial_grid(rows, cols)
+    next_generation = create_initial_grid(rows, cols)
 
     # Run Game of Life sequence
     gen = 1
@@ -326,16 +224,8 @@ def run_game():
     return input("<Enter> to exit or r to run again: ")
 
 
-
-
-
-
-
-
-
 # Start the Game of Life
 run = "r"
 while run == "r":
     out = run_game()
     run = out
-
